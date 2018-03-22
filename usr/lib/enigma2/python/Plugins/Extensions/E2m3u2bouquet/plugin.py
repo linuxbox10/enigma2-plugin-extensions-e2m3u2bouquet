@@ -1,6 +1,7 @@
 # Embedded file name: /usr/lib/enigma2/python/Plugins/Extensions/E2m3u2bouquet/plugin.py
 import time
 import os
+import errno
 import sys
 import log
 import urllib
@@ -107,7 +108,7 @@ class AutoStartTimer:
             except Exception as e:
                 print >> log, '[e2m3u2b] on_timer Error:', e
                 if config.plugins.e2m3u2b.debug.value:
-                    raise e
+                    raise
 
         self.update(atLeast)
 
@@ -161,8 +162,30 @@ def do_update():
             config.plugins.e2m3u2b.last_update.save()
 
 
+def do_reset():
+    """Reset bouquets and
+    epg importer config by running thr script uninstall method
+    """
+    print 'do_reset called'
+    iptv = e2m3u2bouquet.IPTVSetup()
+    iptv.uninstaller()
+
+
 def main(session, **kwargs):
+    check_cfg_folder()
     session.open(E2m3u2b_Menu)
+
+
+def check_cfg_folder():
+    """Make config folder if it doesn't exist
+    """
+    try:
+        os.makedirs(e2m3u2bouquet.CFGPATH)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            print >> log, '[e2m3u2b] unable to create config dir:', e
+            if config.plugins.e2m3u2b.debug.value:
+                raise
 
 
 def done_configuring():
@@ -186,7 +209,7 @@ def on_boot_start_check():
     except Exception as e:
         print >> log, '[e2m3u2b] on_boot_start_check Error:', e
         if config.plugins.e2m3u2b.debug.value:
-            raise e
+            raise
 
 
 def autostart(reason, session = None, **kwargs):
@@ -234,7 +257,7 @@ extDescriptor = PluginDescriptor(name=plugin_name, description=plugin_descriptio
 config.plugins.e2m3u2b.extensions.addNotifier(update_extensions_menu, initial_call=False)
 
 def Plugins(**kwargs):
-    result = [PluginDescriptor(name=plugin_name, description=plugin_description, where=[PluginDescriptor.WHERE_AUTOSTART, PluginDescriptor.WHERE_SESSIONSTART], fnc=autostart, wakeupfnc=get_next_wakeup), PluginDescriptor(name=plugin_name, description=plugin_description, where=PluginDescriptor.WHERE_PLUGINMENU, icon='e2m3ubouquetlogo.png', fnc=main)]
+    result = [PluginDescriptor(name=plugin_name, description=plugin_description, where=[PluginDescriptor.WHERE_AUTOSTART, PluginDescriptor.WHERE_SESSIONSTART], fnc=autostart, wakeupfnc=get_next_wakeup), PluginDescriptor(name=plugin_name, description=plugin_description, where=PluginDescriptor.WHERE_PLUGINMENU, icon='images/e2m3ubouquetlogo.png', fnc=main)]
     if config.plugins.e2m3u2b.extensions.value:
         result.append(extDescriptor)
     return result

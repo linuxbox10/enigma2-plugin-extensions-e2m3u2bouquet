@@ -30,10 +30,13 @@ class ProviderConfigEntry:
 
 
 class ProvidersConfig:
-    providers = {}
+
+    def __init__(self):
+        self.providers = {}
 
     def read(self):
         """Read providers from config file"""
+        self.providers = {}
         if config.plugins.e2m3u2b.cfglevel.value != '1' and not os.path.isfile(os.path.join(e2m3u2bouquet.CFGPATH, 'config.xml')):
             self.migration()
         providers_list = get_providers_config()
@@ -179,7 +182,7 @@ class ProvidersConfig:
                 print >> log, '[e2m3u2b] process_provider_update error. Type:', type(e)
                 print >> log, '[e2m3u2b] process_provider_update error: ', e
                 if config.plugins.e2m3u2b.debug.value:
-                    raise e
+                    raise
 
         if os.path.isfile(filename):
             try:
@@ -194,7 +197,7 @@ class ProvidersConfig:
             except IndexError as e:
                 print >> log, '[e2m3u2b] process_provider_update error unable to read providers update file'
                 if config.plugins.e2m3u2b.debug.value:
-                    raise e
+                    raise
 
             if not config.plugins.e2m3u2b.debug.value:
                 os.remove(filename)
@@ -257,7 +260,7 @@ def get_github_providers():
     except Exception as e:
         print >> log, '[e2m3u2b] Unable to download Github providers list'
         if config.plugins.e2m3u2b.debug.value:
-            raise e
+            raise
 
     return providers
 
@@ -270,7 +273,7 @@ def get_providers_config():
         except Exception as e:
             print >> log, '[e2m3u2b] Unable to read config file'
             if config.plugins.e2m3u2b.debug.value:
-                raise e
+                raise
 
     return suppliers
 

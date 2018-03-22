@@ -28,13 +28,13 @@ ENIGMAPATH = '/etc/enigma2/'
 CFGPATH = os.path.join(ENIGMAPATH, 'e2m3u2bouquet/')
 
 class E2m3u2b_Providers(Screen):
-    skin = '\n        <screen position="center,center" size="600,500">\n            <widget name="key_red" position="0,0" size="140,40" valign="center" halign="center" zPosition="4"  foregroundColor="white" font="Regular;20" transparent="1" shadowColor="background" shadowOffset="-2,-2" />\n            <widget name="key_green" position="140,0" size="140,40" valign="center" halign="center" zPosition="4"  foregroundColor="white" font="Regular;20" transparent="1" shadowColor="background" shadowOffset="-2,-2" />\n            <ePixmap pixmap="skin_default/buttons/red.png" position="0,0" size="140,40" transparent="1" alphatest="on" />\n            <ePixmap pixmap="skin_default/buttons/green.png" position="140,0" size="140,40" transparent="1" alphatest="on" />            \n            <widget source="list" render="Listbox" position="10,50" size="580,430" scrollbarMode="showOnDemand">\n                <convert type="TemplatedMultiContent">\n                    {"template": [\n                        MultiContentEntryPixmapAlphaTest(pos = (10, 0), size = (32, 32), png = 0),\n                        MultiContentEntryText(pos = (47, 0), size = (400, 30), font=0, flags = RT_HALIGN_LEFT|RT_VALIGN_TOP, text = 1),\n                        ],\n                        "fonts": [gFont("Regular",22)],\n                        "itemHeight": 30\n                    }\n                </convert>\n            </widget>\n            <widget name="pleasewait" position="10,60" size="580,140" font="Regular;18" halign="center" valign="center" transparent="0" zPosition="5"/>\n            <widget name="no_providers" position="10,50" size="580,430" font="Regular;18" zPosition="4" />\n        </screen>\n        '
+    skin = '\n        <screen position="center,center" size="600,500">\n            <widget name="key_red" position="0,0" size="140,40" valign="center" halign="center" zPosition="4"  foregroundColor="white" font="Regular;20" transparent="1" shadowColor="background" shadowOffset="-2,-2" />\n            <widget name="key_green" position="140,0" size="140,40" valign="center" halign="center" zPosition="4"  foregroundColor="white" font="Regular;20" transparent="1" shadowColor="background" shadowOffset="-2,-2" />\n            <ePixmap pixmap="skin_default/buttons/red.png" position="0,0" size="140,40" transparent="1" alphatest="on" />\n            <ePixmap pixmap="skin_default/buttons/green.png" position="140,0" size="140,40" transparent="1" alphatest="on" />            \n            <widget source="list" render="Listbox" position="10,50" size="580,430" scrollbarMode="showOnDemand">\n                <convert type="TemplatedMultiContent">\n                    {"template": [\n                        MultiContentEntryPixmapAlphaTest(pos = (10, 0), size = (32, 32), png = 0),\n                        MultiContentEntryText(pos = (47, 0), size = (400, 30), font=0, flags = RT_HALIGN_LEFT|RT_VALIGN_TOP, text = 1),\n                        MultiContentEntryText(pos = (450, 0), size = (120, 30), font=0, flags = RT_HALIGN_LEFT|RT_VALIGN_TOP, text = 2),                                            \n                        ],\n                        "fonts": [gFont("Regular",22)],\n                        "itemHeight": 30\n                    }\n                </convert>\n            </widget>\n            <widget name="pleasewait" position="10,60" size="580,140" font="Regular;18" halign="center" valign="center" transparent="0" zPosition="5"/>\n            <widget name="no_providers" position="10,50" size="580,430" font="Regular;18" zPosition="4" />\n        </screen>\n        '
 
     def __init__(self, session):
         Screen.__init__(self, session)
         self.session = session
         Screen.setTitle(self, 'IPTV Bouquet Maker - Providers')
-        self.skinName = ['E2m3u2b_Providers', 'AutoBouquetsMaker_Providers']
+        self.skinName = ['E2m3u2b_Providers', 'AutoBouquetsMaker_HideSections']
         self.drawList = []
         self['list'] = List(self.drawList)
         self.activityTimer = eTimer()
@@ -92,7 +92,7 @@ class E2m3u2b_Providers(Screen):
             except:
                 pixmap = LoadPixmap(cached=True, path=resolveFilename(SCOPE_CURRENT_SKIN, 'skin_default/icons/lock_off.png'))
 
-        return (pixmap, str(name))
+        return (pixmap, str(name), '')
 
     def refresh(self):
         self.drawList = []

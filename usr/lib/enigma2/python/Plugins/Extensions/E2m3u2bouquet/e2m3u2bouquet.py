@@ -9,6 +9,7 @@ e2m3u2bouquet.e2m3u2bouquet -- Enigma2 IPTV m3u to bouquet parser
 """
 import sys
 import os
+import errno
 import re
 import unicodedata
 import datetime
@@ -36,9 +37,9 @@ except ImportError:
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 __all__ = []
-__version__ = '0.7.1'
+__version__ = '0.7.3'
 __date__ = '2017-06-04'
-__updated__ = '2018-02-27'
+__updated__ = '2018-03-07'
 DEBUG = 0
 TESTRUN = 0
 ENIGMAPATH = '/etc/enigma2/'
@@ -70,7 +71,7 @@ class AppUrlOpener(urllib.FancyURLopener):
 
 class IPTVSetup():
 
-    def __init__(self):
+    def display_welcome(self):
         print '\n********************************'
         print 'Starting Engima2 IPTV bouquets v{}'.format(__version__)
         print str(datetime.datetime.now())
@@ -104,7 +105,8 @@ class IPTVSetup():
             bakfile.close()
             tvfile.close()
         except Exception as e:
-            raise e
+            print 'Unable to uninstall'
+            raise
 
         print '----Uninstall complete----'
 
@@ -118,7 +120,8 @@ class IPTVSetup():
         try:
             urllib.urlretrieve(url, filename)
         except Exception as e:
-            raise e
+            print 'Unable to download m3u file from url'
+            raise
 
         return filename
 
@@ -140,7 +143,8 @@ class IPTVSetup():
             urllib.urlretrieve(url, filename)
             return filename
         except Exception as e:
-            raise e
+            print 'Unable to download Github providers'
+            raise
 
     def download_bouquet(self, url):
         """Download panel bouquet file from url"""
@@ -152,7 +156,8 @@ class IPTVSetup():
         try:
             urllib.urlretrieve(url, filename)
         except Exception as e:
-            raise e
+            print 'Unable to download providers panel bouquet file'
+            raise
 
         return filename
 
@@ -187,7 +192,7 @@ class IPTVSetup():
             if not os.path.getsize(filename):
                 raise Exception('M3U file is empty. Check username & password')
         except Exception as e:
-            raise e
+            raise
 
         category_order = []
         category_options = {}
@@ -516,8 +521,12 @@ class IPTVSetup():
     def download_picons(self, dictchannels, iconpath):
         print '\n----Downloading Picon files, please be patient----'
         print 'If no Picons exist this will take a few minutes'
-        if not os.path.isdir(iconpath):
+        try:
             os.makedirs(iconpath)
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
+
         for cat in dictchannels:
             if not cat.startswith('VOD'):
                 for x in dictchannels[cat]:
@@ -826,8 +835,12 @@ class IPTVSetup():
         indent = '  '
         if DEBUG:
             print 'creating EPGImporter config'
-        if not os.path.isdir(EPGIMPORTPATH):
+        try:
             os.makedirs(EPGIMPORTPATH)
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
+
         channels_filename = os.path.join(EPGIMPORTPATH, 'suls_iptv_{}_channels.xml'.format(self.get_safe_filename(provider)))
         if dictchannels:
             with open(channels_filename, 'w+') as f:
@@ -875,7 +888,7 @@ class IPTVSetup():
             if not os.path.getsize(providerfile):
                 raise Exception('Providers file is empty')
         except Exception as e:
-            raise e
+            raise
 
         with open(providerfile, 'r') as f:
             for line in f:
@@ -967,7 +980,7 @@ class config():
     def makeconfig(self, configfile):
         print 'Default configuration file created in {}\n'.format(os.path.join(CFGPATH, 'config.xml'))
         f = open(configfile, 'wb')
-        f.write('<!--\r\n    E2m3u2bouquet supplier config file\r\n    Add as many suppliers as required and run the script with no parameters\r \n    this config file will be used and the relevant bouquets set up for all suppliers entered\r \n    0 = No/false\r\n    1 = Yes/true\r\n    For elements with <![CDATA[]] enter value between brackets e.g. <![CDATA[mypassword]]>\r \n-->\r\n<config>\r\n    <supplier>\r\n        <name>Supplier Name 1</name><!-- Supplier Name -->\r\n        <enabled>1</enabled><!-- Enable or disable the supplier (0 or 1) -->\r\n        <m3uurl><![CDATA[http://address.yourprovider.com:80/get.php?username=YOURUSERNAME&password=YOURPASSWORD&type=m3u_plus&output=ts]]></m3uurl><!-- Extended M3U url -->\r\n        <epgurl><![CDATA[http://address.yourprovider.com:80/xmltv.php?username=YOURUSERNAME&password=YOURPASSWORD]]></epgurl><!-- XMLTV EPG url -->\r\n        <username><![CDATA[]]></username><!-- (Optional) will replace USERNAME placeholder in urls -->\r\n        <password><![CDATA[]]></password><!-- (Optional) will replace PASSWORD placeholder in urls -->\r\n        <iptvtypes>0</iptvtypes><!-- Change all streams to IPTV type (0 or 1) -->\r\n        <streamtypetv></streamtypetv><!-- (Optional) Custom TV stream type (e.g. 1, 4097, 5001 or 5002) -->\r\n        <streamtypevod></streamtypevod><!-- (Optional) Custom VOD stream type (e.g. 4097, 5001 or 5002) -->\r\n        <multivod>0</multivod><!-- Split VOD into seperate categories (0 or 1) -->\r\n        <allbouquet>1</allbouquet><!-- Create all channels bouquet -->\r\n        <picons>0</picons><!-- Automatically download Picons (0 or 1) -->\r\n        <iconpath>/usr/share/enigma2/picon/</iconpath><!-- Location to store picons -->\r\n        <xcludesref>1</xcludesref><!-- Disable service ref overriding from override.xml file (0 or 1) -->\r\n        <bouqueturl><![CDATA[]]></bouqueturl><!-- (Optional) url to download providers bouquet - to map custom service references -->\r\n        <bouquetdownload>0</bouquetdownload><!-- Download providers bouquet (use default url) must have username and password set above - to map custom service references -->\r\n        <bouquettop>0</bouquettop><!-- Place IPTV bouquets at top (0 or 1)-->\r\n    </supplier>\r\n    <supplier>\r\n        <name>Supplier Name</name><!-- Supplier Name -->\r\n        <enabled>0</enabled><!-- Enable or disable the supplier (0 or 1) -->\r\n        <m3uurl><![CDATA[http://address.yourprovider.com:80/get.php?username=YOURUSERNAME&password=YOURPASSWORD&type=m3u_plus&output=ts]]></m3uurl><!-- Extended M3U url -->\r\n        <epgurl><![CDATA[http://address.yourprovider.com:80/xmltv.php?username=YOURUSERNAME&password=YOURPASSWORD]]></epgurl><!-- XMLTV EPG url -->\r\n        <username><![CDATA[]]></username><!-- (Optional) will replace USERNAME placeholder in urls -->\r\n        <password><![CDATA[]]></password><!-- (Optional) will replace PASSWORD placeholder in urls -->\r\n        <iptvtypes>0</iptvtypes><!-- Change all streams to IPTV type (0 or 1) -->\r\n        <streamtypetv></streamtypetv><!-- (Optional) Custom TV service type (e.g. 1, 4097, 5001 or 5002) -->\r\n        <streamtypevod></streamtypevod><!-- (Optional) Custom VOD service type (e.g. 4097, 5001 or 5002) -->\r\n        <multivod>0</multivod><!-- Split VOD into seperate categories (0 or 1) -->\r\n        <allbouquet>1</allbouquet><!-- Create all channels bouquet -->\r\n        <picons>0</picons><!-- Automatically download Picons (0 or 1) -->\r\n        <iconpath>/usr/share/enigma2/picon/</iconpath><!-- Location to store picons -->\r\n        <xcludesref>1</xcludesref><!-- Disable service ref overriding from override.xml file (0 or 1) -->\r\n        <bouqueturl><![CDATA[]]></bouqueturl><!-- (Optional) url to download providers bouquet - to map custom service references -->\r\n        <bouquetdownload>0</bouquetdownload><!-- Download providers bouquet (use default url) must have username and password set above - to map custom service references -->\r\n        <bouquettop>0</bouquettop><!-- Place IPTV bouquets at top (0 or 1)--> \r\n    </supplier>\r\n</config>')
+        f.write('<!--\r\n    E2m3u2bouquet supplier config file\r\n    Add as many suppliers as required and run the script with no parameters\r \n    this config file will be used and the relevant bouquets set up for all suppliers entered\r \n    0 = No/false\r\n    1 = Yes/true\r\n    For elements with <![CDATA[]] enter value between brackets e.g. <![CDATA[mypassword]]>\r \n-->\r\n<config>\r\n    <supplier>\r\n        <name>Supplier Name 1</name><!-- Supplier Name -->\r\n        <enabled>1</enabled><!-- Enable or disable the supplier (0 or 1) -->\r\n        <m3uurl><![CDATA[http://address.yourprovider.com:80/get.php?username=USERNAME&password=PASSWORD&type=m3u_plus&output=ts]]></m3uurl><!-- Extended M3U url -->\r\n        <epgurl><![CDATA[http://address.yourprovider.com:80/xmltv.php?username=USERNAME&password=PASSWORD]]></epgurl><!-- XMLTV EPG url -->\r\n        <username><![CDATA[]]></username><!-- (Optional) will replace USERNAME placeholder in urls -->\r\n        <password><![CDATA[]]></password><!-- (Optional) will replace PASSWORD placeholder in urls -->\r\n        <iptvtypes>0</iptvtypes><!-- Change all streams to IPTV type (0 or 1) -->\r\n        <streamtypetv></streamtypetv><!-- (Optional) Custom TV stream type (e.g. 1, 4097, 5001 or 5002) -->\r\n        <streamtypevod></streamtypevod><!-- (Optional) Custom VOD stream type (e.g. 4097, 5001 or 5002) -->\r\n        <multivod>0</multivod><!-- Split VOD into seperate categories (0 or 1) -->\r\n        <allbouquet>1</allbouquet><!-- Create all channels bouquet -->\r\n        <picons>0</picons><!-- Automatically download Picons (0 or 1) -->\r\n        <iconpath>/usr/share/enigma2/picon/</iconpath><!-- Location to store picons -->\r\n        <xcludesref>1</xcludesref><!-- Disable service ref overriding from override.xml file (0 or 1) -->\r\n        <bouqueturl><![CDATA[]]></bouqueturl><!-- (Optional) url to download providers bouquet - to map custom service references -->\r\n        <bouquetdownload>0</bouquetdownload><!-- Download providers bouquet (use default url) must have username and password set above - to map custom service references -->\r\n        <bouquettop>0</bouquettop><!-- Place IPTV bouquets at top (0 or 1)-->\r\n    </supplier>\r\n    <supplier>\r\n        <name>Supplier Name</name><!-- Supplier Name -->\r\n        <enabled>0</enabled><!-- Enable or disable the supplier (0 or 1) -->\r\n        <m3uurl><![CDATA[http://address.yourprovider.com:80/get.php?username=USERNAME&password=PASSWORD&type=m3u_plus&output=ts]]></m3uurl><!-- Extended M3U url -->\r\n        <epgurl><![CDATA[http://address.yourprovider.com:80/xmltv.php?username=USERNAME&password=PASSWORD]]></epgurl><!-- XMLTV EPG url -->\r\n        <username><![CDATA[]]></username><!-- (Optional) will replace USERNAME placeholder in urls -->\r\n        <password><![CDATA[]]></password><!-- (Optional) will replace PASSWORD placeholder in urls -->\r\n        <iptvtypes>0</iptvtypes><!-- Change all streams to IPTV type (0 or 1) -->\r\n        <streamtypetv></streamtypetv><!-- (Optional) Custom TV service type (e.g. 1, 4097, 5001 or 5002) -->\r\n        <streamtypevod></streamtypevod><!-- (Optional) Custom VOD service type (e.g. 4097, 5001 or 5002) -->\r\n        <multivod>0</multivod><!-- Split VOD into seperate categories (0 or 1) -->\r\n        <allbouquet>1</allbouquet><!-- Create all channels bouquet -->\r\n        <picons>0</picons><!-- Automatically download Picons (0 or 1) -->\r\n        <iconpath>/usr/share/enigma2/picon/</iconpath><!-- Location to store picons -->\r\n        <xcludesref>1</xcludesref><!-- Disable service ref overriding from override.xml file (0 or 1) -->\r\n        <bouqueturl><![CDATA[]]></bouqueturl><!-- (Optional) url to download providers bouquet - to map custom service references -->\r\n        <bouquetdownload>0</bouquetdownload><!-- Download providers bouquet (use default url) must have username and password set above - to map custom service references -->\r\n        <bouquettop>0</bouquettop><!-- Place IPTV bouquets at top (0 or 1)--> \r\n    </supplier>\r\n</config>')
 
     def readconfig(self, configfile):
         suppliers = {}
@@ -1117,14 +1130,19 @@ def main(argv = None):
 
     urllib._urlopener = AppUrlOpener()
     e2m3uSetup = IPTVSetup()
+    e2m3uSetup.display_welcome()
     if uninstall:
         e2m3uSetup.uninstaller()
         e2m3uSetup.reload_bouquets()
         print 'Uninstall only, program exiting ...'
         sys.exit(1)
     else:
-        if not os.path.isdir(CFGPATH):
+        try:
             os.makedirs(CFGPATH)
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
+
         if provider is not None and m3uurl is None and (username is not None or password is not None):
             providersfile = e2m3uSetup.download_providers(PROVIDERSURL)
             e2m3uSetup.read_providers(providersfile)

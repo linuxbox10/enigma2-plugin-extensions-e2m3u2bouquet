@@ -1,6 +1,7 @@
 # Embedded file name: /usr/lib/enigma2/python/Plugins/Extensions/E2m3u2bouquet/menu.py
 import time
 import os
+import tempfile
 import sys
 import log
 import plugin as E2m3u2b_Plugin
@@ -28,7 +29,7 @@ except:
 from Tools.LoadPixmap import LoadPixmap
 
 class E2m3u2b_Menu(Screen):
-    skin = '\n    <screen position="center,center" size="600,500">\n        <widget name="key_red" position="0,0" size="140,40" valign="center" halign="center" zPosition="5"  foregroundColor="white" font="Regular;20" transparent="1" shadowColor="background" shadowOffset="-2,-2" />\n        <widget name="key_green" position="140,0" size="140,40" valign="center" halign="center" zPosition="5"  foregroundColor="white" font="Regular;20" transparent="1" shadowColor="background" shadowOffset="-2,-2" />\n        <ePixmap pixmap="skin_default/buttons/red.png" position="0,0" size="140,40" transparent="1" alphatest="on" />\n        <ePixmap pixmap="skin_default/buttons/green.png" position="140,0" size="140,40" transparent="1" alphatest="on" />\n\n        <widget source="list" render="Listbox" position="0,50" size="600,420" scrollbarMode="showOnDemand">\n            <convert type="TemplatedMultiContent">\n                {"template": [\n                    MultiContentEntryText(pos = (58, 5), size = (440, 38), font=0, flags = RT_HALIGN_LEFT|RT_VALIGN_TOP, text = 1),\n                    ],\n                    "fonts": [gFont("Regular",22)],\n                    "itemHeight": 40\n                }\n            </convert>\n        </widget>        \n    </screen>\n    '
+    skin = '\n    <screen position="center,center" size="600,500">\n        <widget name="key_red" position="0,0" size="140,40" valign="center" halign="center" zPosition="5"  foregroundColor="white" font="Regular;20" transparent="1" shadowColor="background" shadowOffset="-2,-2" />\n        <widget name="key_green" position="140,0" size="140,40" valign="center" halign="center" zPosition="5"  foregroundColor="white" font="Regular;20" transparent="1" shadowColor="background" shadowOffset="-2,-2" />\n        <ePixmap pixmap="skin_default/buttons/red.png" position="0,0" size="140,40" transparent="1" alphatest="on" />\n        <ePixmap pixmap="skin_default/buttons/green.png" position="140,0" size="140,40" transparent="1" alphatest="on" />\n\n        <widget source="list" render="Listbox" position="0,50" size="600,420" scrollbarMode="showOnDemand">\n            <convert type="TemplatedMultiContent">\n                {"template": [\n                    MultiContentEntryPixmapAlphaTest(pos = (12, 4), size = (32, 32), png=0),\n                    MultiContentEntryText(pos = (58, 5), size = (440, 38), font=0, flags = RT_HALIGN_LEFT|RT_VALIGN_TOP, text = 1),\n                    ],\n                    "fonts": [gFont("Regular",22)],\n                    "itemHeight": 40\n                }\n            </convert>\n        </widget>\n    </screen>\n    '
 
     def __init__(self, session):
         Screen.__init__(self, session)
@@ -47,14 +48,18 @@ class E2m3u2b_Menu(Screen):
         self.createSetup()
 
     def createSetup(self):
-        l = []
-        l.append(('0', 'Configure'))
-        l.append(('1', 'Providers'))
-        l.append(('2', 'Run'))
-        l.append(('3', 'Status'))
-        l.append(('4', 'Show Log'))
-        l.append(('5', 'About'))
+        l = [self.build_list_entry('Configure'),
+         self.build_list_entry('Providers'),
+         self.build_list_entry('Run'),
+         self.build_list_entry('Status'),
+         self.build_list_entry('Reset Bouquets'),
+         self.build_list_entry('Show Log'),
+         self.build_list_entry('About')]
         self['list'].list = l
+
+    def build_list_entry(self, description):
+        pixmap = LoadPixmap(cached=True, path='{}/images/{}'.format(os.path.dirname(sys.modules[__name__].__file__), 'blank.png'))
+        return (pixmap, description)
 
     def openSelected(self):
         index = self['list'].getIndex()
@@ -71,9 +76,12 @@ class E2m3u2b_Menu(Screen):
             self.session.open(E2m3u2b_Status)
             return
         if index == 4:
-            self.session.open(E2m3u2b_Log)
+            self.reset_bouquets()
             return
         if index == 5:
+            self.session.open(E2m3u2b_Log)
+            return
+        if index == 6:
             self.session.open(E2m3u2b_About)
             return
 
@@ -90,7 +98,23 @@ class E2m3u2b_Menu(Screen):
         except Exception as e:
             print >> log, '[e2m3u2b] manual_update_callback Error:', e
             if config.plugins.e2m3u2b.debug.value:
-                raise e
+                raise
+
+    def reset_bouquets(self):
+        """Remove any generated bouquets
+        and epg importer config
+        """
+        self.session.openWithCallback(self.reset_bouquets_callback, MessageBox, 'This will remove the IPTV Bouquets\nand Epg Importer configs\nthat have been created.\nProceed?', MessageBox.TYPE_YESNO, default=False)
+
+    def reset_bouquets_callback(self, confirmed):
+        if not confirmed:
+            return
+        try:
+            E2m3u2b_Plugin.do_reset()
+        except Exception as e:
+            print >> log, '[e2m3u2b] reset_bouquets_callback Error:', e
+            if config.plugins.e2m3u2b.debug.value:
+                raise
 
     def keyCancel(self):
         self.close()
@@ -190,20 +214,22 @@ class E2m3u2b_Status(Screen):
 
 
 class E2m3u2b_Log(Screen):
-    skin = '\n    <screen position="center,center" size="600,500">\n    <ePixmap name="red" position="0,0" zPosition="2" size="140,40" pixmap="skin_default/buttons/red.png" transparent="1" alphatest="on" />    \n    <ePixmap name="blue" position="140,0" zPosition="2" size="140,40" pixmap="skin_default/buttons/blue.png" transparent="1" alphatest="on" />    \n    <widget name="key_red" position="0,0" size="140,40" valign="center" halign="center" zPosition="4" foregroundColor="white" font="Regular;20" transparent="1" shadowColor="background" shadowOffset="-2,-2" />    \n    <widget name="key_blue" position="140,0" size="140,40" valign="center" halign="center" zPosition="4" foregroundColor="white" font="Regular;20" transparent="1" shadowColor="background" shadowOffset="-2,-2" />        \n    <widget name="list" position="10,40" size="540,340" />\n    </screen>'
+    skin = '\n    <screen position="center,center" size="600,500">\n    <ePixmap name="red" position="0,0" zPosition="2" size="140,40" pixmap="skin_default/buttons/red.png" transparent="1" alphatest="on" />\n    <ePixmap name="green" position="140,0" zPosition="2" size="140,40" pixmap="skin_default/buttons/green.png" transparent="1" alphatest="on" />    \n    <ePixmap name="blue" position="280,0" zPosition="2" size="140,40" pixmap="skin_default/buttons/blue.png" transparent="1" alphatest="on" />    \n    <widget name="key_red" position="0,0" size="140,40" valign="center" halign="center" zPosition="4" foregroundColor="white" font="Regular;20" transparent="1" shadowColor="background" shadowOffset="-2,-2" />\n    <widget name="key_green" position="140,0" size="140,40" valign="center" halign="center" zPosition="4" foregroundColor="white" font="Regular;20" transparent="1" shadowColor="background" shadowOffset="-2,-2" />    \n    <widget name="key_blue" position="280,0" size="140,40" valign="center" halign="center" zPosition="4" foregroundColor="white" font="Regular;20" transparent="1" shadowColor="background" shadowOffset="-2,-2" />        \n    <widget name="list" position="10,40" size="540,340" />\n    </screen>'
 
     def __init__(self, session):
         self.session = session
         Screen.__init__(self, session)
         Screen.setTitle(self, 'IPTV Bouquet Maker - Log')
-        self.skinName = ['E2m3u2b_Log', 'EPGImportLog', 'XMLTVImportLog']
+        self.skinName = ['E2m3u2b_Log', 'AutoBouquetsMaker_Log']
         self['key_red'] = Button('Close')
+        self['key_green'] = Button('Save')
         self['key_blue'] = Button('Clear')
         self['list'] = ScrollLabel(log.getvalue())
         self['actions'] = ActionMap(['DirectionActions',
          'OkCancelActions',
          'ColorActions',
          'MenuActions'], {'red': self.keyCancel,
+         'green': self.keySave,
          'blue': self.keyClear,
          'cancel': self.keyCancel,
          'ok': self.keyCancel,
@@ -222,3 +248,10 @@ class E2m3u2b_Log(Screen):
         log.logfile.reset()
         log.logfile.truncate()
         self.close(False)
+
+    def keySave(self):
+        path = tempfile.gettempdir()
+        filename = os.path.join(path, 'e2m3u2bouquet.log')
+        with open(filename, 'w') as f:
+            f.write(log.getvalue())
+        self.session.open(MessageBox, 'Log file has been saved to the tmp directory', MessageBox.TYPE_INFO, timeout=30)
