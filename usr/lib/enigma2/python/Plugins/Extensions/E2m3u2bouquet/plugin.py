@@ -164,11 +164,12 @@ def do_update():
 
 def do_reset():
     """Reset bouquets and
-    epg importer config by running thr script uninstall method
+    epg importer config by running the script uninstall method
     """
     print 'do_reset called'
     iptv = e2m3u2bouquet.IPTVSetup()
     iptv.uninstaller()
+    iptv.reload_bouquets()
 
 
 def main(session, **kwargs):

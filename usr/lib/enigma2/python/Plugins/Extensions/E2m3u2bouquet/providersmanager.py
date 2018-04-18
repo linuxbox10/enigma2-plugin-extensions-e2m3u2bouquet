@@ -7,6 +7,7 @@ import urllib
 import time
 import e2m3u2bouquet
 from Components.config import config, ConfigEnableDisable, ConfigSubsection, ConfigYesNo, ConfigClock, getConfigListEntry, ConfigText, ConfigSelection, ConfigNumber, ConfigSubDict, NoSave, ConfigPassword, ConfigSelectionNumber
+from collections import OrderedDict
 
 class ProviderConfigEntry:
     name = ''
@@ -32,11 +33,11 @@ class ProviderConfigEntry:
 class ProvidersConfig:
 
     def __init__(self):
-        self.providers = {}
+        self.providers = OrderedDict()
 
     def read(self):
         """Read providers from config file"""
-        self.providers = {}
+        self.providers = OrderedDict()
         if config.plugins.e2m3u2b.cfglevel.value != '1' and not os.path.isfile(os.path.join(e2m3u2bouquet.CFGPATH, 'config.xml')):
             self.migration()
         providers_list = get_providers_config()
@@ -266,7 +267,7 @@ def get_github_providers():
 
 
 def get_providers_config():
-    suppliers = {}
+    suppliers = OrderedDict()
     if os.path.isfile(os.path.join(e2m3u2bouquet.CFGPATH, 'config.xml')):
         try:
             suppliers = e2m3u2bouquet.config().readconfig(os.path.join(e2m3u2bouquet.CFGPATH, 'config.xml'))

@@ -37,9 +37,9 @@ except ImportError:
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 __all__ = []
-__version__ = '0.7.3'
+__version__ = '0.7.4'
 __date__ = '2017-06-04'
-__updated__ = '2018-03-07'
+__updated__ = '2018-04-10'
 DEBUG = 0
 TESTRUN = 0
 ENIGMAPATH = '/etc/enigma2/'
@@ -550,10 +550,18 @@ class IPTVSetup():
                     sys.stdout.write('.')
                     sys.stdout.flush()
                 try:
-                    urllib.urlretrieve(logourl, piconfilepath)
+                    response = urllib.urlopen(logourl)
+                    info = response.info()
+                    response.close()
+                    if info.maintype == 'image':
+                        urllib.urlretrieve(logourl, piconfilepath)
+                    else:
+                        if DEBUG:
+                            print 'Download Picon - not an image skipping'
+                        return
                 except Exception as e:
                     if DEBUG:
-                        print e
+                        print ('Download picon urlopen error', e)
                     return
 
                 self.picon_post_processing(piconfilepath)
@@ -567,7 +575,7 @@ class IPTVSetup():
             ext = imghdr.what(piconfilepath)
         except Exception as e:
             if DEBUG:
-                print e
+                print ('Picon post processing - not an image or no file', e, piconfilepath)
             return
 
         if ext is not None and ext is not 'png':
@@ -577,14 +585,14 @@ class IPTVSetup():
                 Image.open(piconfilepath).save('{}.{}'.format(piconfilepath, 'png'))
             except Exception as e:
                 if DEBUG:
-                    print e
+                    print ('Picon post processing - unable to convert image', e)
                 return
 
             try:
                 os.remove(piconfilepath)
             except Exception as e:
                 if DEBUG:
-                    print e
+                    print ('Picon post processing - unable to remove non png file', e)
                 return
 
         else:
@@ -592,7 +600,7 @@ class IPTVSetup():
                 os.rename(piconfilepath, '{}.{}'.format(piconfilepath, ext))
             except Exception as e:
                 if DEBUG:
-                    print e
+                    print ('Picon post processing - unable to rename file ', e)
 
         return
 
@@ -980,10 +988,10 @@ class config():
     def makeconfig(self, configfile):
         print 'Default configuration file created in {}\n'.format(os.path.join(CFGPATH, 'config.xml'))
         f = open(configfile, 'wb')
-        f.write('<!--\r\n    E2m3u2bouquet supplier config file\r\n    Add as many suppliers as required and run the script with no parameters\r \n    this config file will be used and the relevant bouquets set up for all suppliers entered\r \n    0 = No/false\r\n    1 = Yes/true\r\n    For elements with <![CDATA[]] enter value between brackets e.g. <![CDATA[mypassword]]>\r \n-->\r\n<config>\r\n    <supplier>\r\n        <name>Supplier Name 1</name><!-- Supplier Name -->\r\n        <enabled>1</enabled><!-- Enable or disable the supplier (0 or 1) -->\r\n        <m3uurl><![CDATA[http://address.yourprovider.com:80/get.php?username=USERNAME&password=PASSWORD&type=m3u_plus&output=ts]]></m3uurl><!-- Extended M3U url -->\r\n        <epgurl><![CDATA[http://address.yourprovider.com:80/xmltv.php?username=USERNAME&password=PASSWORD]]></epgurl><!-- XMLTV EPG url -->\r\n        <username><![CDATA[]]></username><!-- (Optional) will replace USERNAME placeholder in urls -->\r\n        <password><![CDATA[]]></password><!-- (Optional) will replace PASSWORD placeholder in urls -->\r\n        <iptvtypes>0</iptvtypes><!-- Change all streams to IPTV type (0 or 1) -->\r\n        <streamtypetv></streamtypetv><!-- (Optional) Custom TV stream type (e.g. 1, 4097, 5001 or 5002) -->\r\n        <streamtypevod></streamtypevod><!-- (Optional) Custom VOD stream type (e.g. 4097, 5001 or 5002) -->\r\n        <multivod>0</multivod><!-- Split VOD into seperate categories (0 or 1) -->\r\n        <allbouquet>1</allbouquet><!-- Create all channels bouquet -->\r\n        <picons>0</picons><!-- Automatically download Picons (0 or 1) -->\r\n        <iconpath>/usr/share/enigma2/picon/</iconpath><!-- Location to store picons -->\r\n        <xcludesref>1</xcludesref><!-- Disable service ref overriding from override.xml file (0 or 1) -->\r\n        <bouqueturl><![CDATA[]]></bouqueturl><!-- (Optional) url to download providers bouquet - to map custom service references -->\r\n        <bouquetdownload>0</bouquetdownload><!-- Download providers bouquet (use default url) must have username and password set above - to map custom service references -->\r\n        <bouquettop>0</bouquettop><!-- Place IPTV bouquets at top (0 or 1)-->\r\n    </supplier>\r\n    <supplier>\r\n        <name>Supplier Name</name><!-- Supplier Name -->\r\n        <enabled>0</enabled><!-- Enable or disable the supplier (0 or 1) -->\r\n        <m3uurl><![CDATA[http://address.yourprovider.com:80/get.php?username=USERNAME&password=PASSWORD&type=m3u_plus&output=ts]]></m3uurl><!-- Extended M3U url -->\r\n        <epgurl><![CDATA[http://address.yourprovider.com:80/xmltv.php?username=USERNAME&password=PASSWORD]]></epgurl><!-- XMLTV EPG url -->\r\n        <username><![CDATA[]]></username><!-- (Optional) will replace USERNAME placeholder in urls -->\r\n        <password><![CDATA[]]></password><!-- (Optional) will replace PASSWORD placeholder in urls -->\r\n        <iptvtypes>0</iptvtypes><!-- Change all streams to IPTV type (0 or 1) -->\r\n        <streamtypetv></streamtypetv><!-- (Optional) Custom TV service type (e.g. 1, 4097, 5001 or 5002) -->\r\n        <streamtypevod></streamtypevod><!-- (Optional) Custom VOD service type (e.g. 4097, 5001 or 5002) -->\r\n        <multivod>0</multivod><!-- Split VOD into seperate categories (0 or 1) -->\r\n        <allbouquet>1</allbouquet><!-- Create all channels bouquet -->\r\n        <picons>0</picons><!-- Automatically download Picons (0 or 1) -->\r\n        <iconpath>/usr/share/enigma2/picon/</iconpath><!-- Location to store picons -->\r\n        <xcludesref>1</xcludesref><!-- Disable service ref overriding from override.xml file (0 or 1) -->\r\n        <bouqueturl><![CDATA[]]></bouqueturl><!-- (Optional) url to download providers bouquet - to map custom service references -->\r\n        <bouquetdownload>0</bouquetdownload><!-- Download providers bouquet (use default url) must have username and password set above - to map custom service references -->\r\n        <bouquettop>0</bouquettop><!-- Place IPTV bouquets at top (0 or 1)--> \r\n    </supplier>\r\n</config>')
+        f.write('<!--\r\n    E2m3u2bouquet supplier config file\r\n    Add as many suppliers as required and run the script with no parameters\r\n    this config file will be used and the relevant bouquets set up for all suppliers entered\r\n    0 = No/false\r\n    1 = Yes/true\r\n    For elements with <![CDATA[]] enter value between brackets e.g. <![CDATA[mypassword]]>\r\n-->\r\n<config>\r\n    <supplier>\r\n        <name>Supplier Name 1</name><!-- Supplier Name -->\r\n        <enabled>1</enabled><!-- Enable or disable the supplier (0 or 1) -->\r\n        <m3uurl><![CDATA[http://address.yourprovider.com:80/get.php?username=USERNAME&password=PASSWORD&type=m3u_plus&output=ts]]></m3uurl><!-- Extended M3U url -->\r\n        <epgurl><![CDATA[http://address.yourprovider.com:80/xmltv.php?username=USERNAME&password=PASSWORD]]></epgurl><!-- XMLTV EPG url -->\r\n        <username><![CDATA[]]></username><!-- (Optional) will replace USERNAME placeholder in urls -->\r\n        <password><![CDATA[]]></password><!-- (Optional) will replace PASSWORD placeholder in urls -->\r\n        <iptvtypes>0</iptvtypes><!-- Change all streams to IPTV type (0 or 1) -->\r\n        <streamtypetv></streamtypetv><!-- (Optional) Custom TV stream type (e.g. 1, 4097, 5001 or 5002) -->\r\n        <streamtypevod></streamtypevod><!-- (Optional) Custom VOD stream type (e.g. 4097, 5001 or 5002) -->\r\n        <multivod>0</multivod><!-- Split VOD into seperate categories (0 or 1) -->\r\n        <allbouquet>1</allbouquet><!-- Create all channels bouquet -->\r\n        <picons>0</picons><!-- Automatically download Picons (0 or 1) -->\r\n        <iconpath>/usr/share/enigma2/picon/</iconpath><!-- Location to store picons -->\r\n        <xcludesref>1</xcludesref><!-- Disable service ref overriding from override.xml file (0 or 1) -->\r\n        <bouqueturl><![CDATA[]]></bouqueturl><!-- (Optional) url to download providers bouquet - to map custom service references -->\r\n        <bouquetdownload>0</bouquetdownload><!-- Download providers bouquet (use default url) must have username and password set above - to map custom service references -->\r\n        <bouquettop>0</bouquettop><!-- Place IPTV bouquets at top (0 or 1)-->\r\n    </supplier>\r\n    <supplier>\r\n        <name>Supplier Name</name><!-- Supplier Name -->\r\n        <enabled>0</enabled><!-- Enable or disable the supplier (0 or 1) -->\r\n        <m3uurl><![CDATA[http://address.yourprovider.com:80/get.php?username=USERNAME&password=PASSWORD&type=m3u_plus&output=ts]]></m3uurl><!-- Extended M3U url -->\r\n        <epgurl><![CDATA[http://address.yourprovider.com:80/xmltv.php?username=USERNAME&password=PASSWORD]]></epgurl><!-- XMLTV EPG url -->\r\n        <username><![CDATA[]]></username><!-- (Optional) will replace USERNAME placeholder in urls -->\r\n        <password><![CDATA[]]></password><!-- (Optional) will replace PASSWORD placeholder in urls -->\r\n        <iptvtypes>0</iptvtypes><!-- Change all streams to IPTV type (0 or 1) -->\r\n        <streamtypetv></streamtypetv><!-- (Optional) Custom TV service type (e.g. 1, 4097, 5001 or 5002) -->\r\n        <streamtypevod></streamtypevod><!-- (Optional) Custom VOD service type (e.g. 4097, 5001 or 5002) -->\r\n        <multivod>0</multivod><!-- Split VOD into seperate categories (0 or 1) -->\r\n        <allbouquet>1</allbouquet><!-- Create all channels bouquet -->\r\n        <picons>0</picons><!-- Automatically download Picons (0 or 1) -->\r\n        <iconpath>/usr/share/enigma2/picon/</iconpath><!-- Location to store picons -->\r\n        <xcludesref>1</xcludesref><!-- Disable service ref overriding from override.xml file (0 or 1) -->\r\n        <bouqueturl><![CDATA[]]></bouqueturl><!-- (Optional) url to download providers bouquet - to map custom service references -->\r\n        <bouquetdownload>0</bouquetdownload><!-- Download providers bouquet (use default url) must have username and password set above - to map custom service references -->\r\n        <bouquettop>0</bouquettop><!-- Place IPTV bouquets at top (0 or 1)--> \r\n    </supplier>\r\n</config>')
 
     def readconfig(self, configfile):
-        suppliers = {}
+        suppliers = OrderedDict()
         tree = ET.ElementTree(file=configfile)
         for node in tree.findall('.//supplier'):
             supplier = {}
@@ -1088,7 +1096,7 @@ def main(argv = None):
         stvod = args.stvod
         if epgurl is None:
             epgurl = 'http://www.vuplus-community.net/rytec/rytecxmltv-UK.gz'
-        if iconpath is None:
+        if iconpath is None or TESTRUN == 1:
             iconpath = PICONSPATH
         if provider is None:
             provider = 'E2m3u2Bouquet'
